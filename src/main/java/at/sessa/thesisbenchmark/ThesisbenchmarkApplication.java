@@ -29,12 +29,11 @@ public class ThesisbenchmarkApplication implements CommandLineRunner {
 		try {
 			executeBenchmark();
 		} finally {
-			benchmarkSetupService.cleanUpContainers();
+			//benchmarkSetupService.cleanUpContainers();
 		}
 	}
 
 	private void executeBenchmark() {
-		/*
 		logger.info("Starting postgres row datasource benchmark");
 		DataSource postgresRowDatasource = benchmarkSetupService.setupPostgresRowDatasource();
 
@@ -48,19 +47,16 @@ public class ThesisbenchmarkApplication implements CommandLineRunner {
 		// TODO: Execute queries and measure time
 
 		benchmarkSetupService.cleanUpPostgresColumnContainer();
-		*/
+
 		logger.info("Starting mssql row datasource benchmark");
 		DataSource mssqlRowDataSource = benchmarkSetupService.setupMssqlRowDataSource();
 		// TODO: Execute queries and measure time
-
 		//benchmarkSetupService.cleanUpMssqlContainer();
 
-		/*
 		logger.info("Starting mssql column datasource benchmark");
 		DataSource mssqlColumnDataSource = benchmarkSetupService.setupMssqlColumnDataSource();
 
 		// TODO: Execute queries and measure time
-		benchmarkSetupService.cleanUpMssqlContainer();
-		*/
+		//benchmarkSetupService.cleanUpMssqlContainer();
 	}
 }
