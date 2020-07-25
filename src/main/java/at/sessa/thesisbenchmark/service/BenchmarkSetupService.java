@@ -231,7 +231,7 @@ public class BenchmarkSetupService {
                 "DELIMITER '|'"
         );
 
-        logger.info("Finished loading nations at: {}", System.currentTimeMillis());
+        logger.info("Finished loading customers at: {}", System.currentTimeMillis());
 
         jdbcTemplate.execute(
                 "COPY PARTSUPP(PS_PARTKEY, PS_SUPPKEY, PS_AVAILQTY, PS_SUPPLYCOST, PS_COMMENT)\n" +
@@ -268,7 +268,7 @@ public class BenchmarkSetupService {
         jdbcTemplate.execute(
                 "BULK INSERT CUSTOMER\n" +
                         "FROM "+testDataLocationInContainer+"customer.tbl'\n"+
-                        "WITH (FIELDTERMINATOR = '|', ROWTERMINATOR = '\n')"
+                        "WITH (FIELDTERMINATOR = '|', ROWTERMINATOR = '\\n')"
         );
 
         jdbcTemplate.execute(
