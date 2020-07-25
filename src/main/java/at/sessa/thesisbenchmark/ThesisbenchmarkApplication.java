@@ -1,6 +1,7 @@
 package at.sessa.thesisbenchmark;
 
 import at.sessa.thesisbenchmark.service.BenchmarkSetupService;
+import at.sessa.thesisbenchmark.service.QueryExecutionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -34,23 +35,26 @@ public class ThesisbenchmarkApplication implements CommandLineRunner {
 	}
 
 	private void executeBenchmark() {
-		//logger.info("Starting postgres row datasource benchmark");
-		//DataSource postgresRowDatasource = benchmarkSetupService.setupPostgresRowDatasource();
+		QueryExecutionService queryExecutionService;
 
-		// TODO: Execute queries and measure time
+		logger.info("Starting postgres row datasource benchmark");
+		DataSource postgresRowDatasource = benchmarkSetupService.setupPostgresRowDatasource();
+
+		queryExecutionService = new QueryExecutionService(postgresRowDatasource);
+		queryExecutionService.benchmark("postgres", "row");
 		/*
 		benchmarkSetupService.cleanUpPostgresRowContainer();
 
 		logger.info("Starting postgres column datasource benchmark");
 		DataSource postgresColumnDataSource = benchmarkSetupService.setupPostgresColumnDatasource();
+		queryExecutionService = new QueryExecutionService(postgresColumnDataSource);
+		queryExecutionService.benchmark("postgres", "column");
 
 		// TODO: Execute queries and measure time
 
 		benchmarkSetupService.cleanUpPostgresColumnContainer();
-		*/
 		logger.info("Starting mssql row datasource benchmark");
 		DataSource mssqlRowDataSource = benchmarkSetupService.setupMssqlRowDataSource();
-		/*
 		// TODO: Execute queries and measure time
 		//benchmarkSetupService.cleanUpMssqlContainer();
 
