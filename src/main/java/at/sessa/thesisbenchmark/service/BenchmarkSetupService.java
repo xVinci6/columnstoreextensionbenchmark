@@ -43,7 +43,7 @@ public class BenchmarkSetupService {
 
     public DataSource setupPostgresRowDatasource() {
         startPostgresRowContainer();
-        DataSource postgresRowDataSource = createPostgresRowDataSource();
+        DataSource postgresRowDataSource = createPostgresDataSource();
         waitUntilDatasourceReady(postgresRowDataSource, null);
         migratePostgresRow(postgresRowDataSource);
         loadPostgresData(postgresRowDataSource);
@@ -58,7 +58,7 @@ public class BenchmarkSetupService {
 
     public DataSource setupPostgresColumnDatasource() {
         startPostgresColumnContainer();
-        DataSource postgresColumnDataSource = createPostgresColumnDataSource();
+        DataSource postgresColumnDataSource = createPostgresDataSource();
         waitUntilDatasourceReady(postgresColumnDataSource, null);
         migratePostgresColumn(postgresColumnDataSource);
         loadPostgresData(postgresColumnDataSource);
@@ -133,7 +133,8 @@ public class BenchmarkSetupService {
     }
 
     private void startPostgresColumnContainer() {
-        Utility.execRuntime(String.format("docker run -d -p 5432:5432 --name %s -e POSTGRES_PASSWORD=password -e PGDATA=/var/lib/postgresql/data/pgdata -v %s --mount source=pgcdata,target=/var/lib/postgresql/data postgres_12_cstore", postgresColumnContainerName, dockerTestdataMountpath));
+        Utility.execRuntime("docker volume create postgrescolumn");
+        Utility.execRuntime(String.format("docker run -d -p 5432:5432 --shm-size=1g --name %s -e POSTGRES_PASSWORD=password -e PGDATA=/var/lib/postgresql/data/pgdata -v %s --mount source=postgrescolumn,target=/var/lib/postgresql/data postgres_12_cstore", postgresColumnContainerName, dockerTestdataMountpath));
     }
 
     private void startMssqlContainer() {
@@ -148,20 +149,13 @@ public class BenchmarkSetupService {
         }
     }
 
-    private DataSource createPostgresRowDataSource() {
+    private DataSource createPostgresDataSource() {
         SimpleDriverDataSource simpleDriverDataSource = new SimpleDriverDataSource();
         simpleDriverDataSource.setDriverClass(Driver.class);
         simpleDriverDataSource.setUrl(postgresProperties.getJdbcUrl());
         simpleDriverDataSource.setUsername(postgresProperties.getUsername());
         simpleDriverDataSource.setPassword(postgresProperties.getPassword());
         return simpleDriverDataSource;
-    }
-
-    private DataSource createPostgresColumnDataSource() {
-        return DataSourceBuilder.create()
-                .username(postgresProperties.getUsername())
-                .password(postgresProperties.getPassword())
-                .url(postgresProperties.getJdbcUrl()).build();
     }
 
     private DataSource createMssqlDataSource() {
