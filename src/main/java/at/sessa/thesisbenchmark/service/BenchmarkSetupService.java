@@ -5,15 +5,20 @@ import at.sessa.thesisbenchmark.configuration.GenericProperties;
 import at.sessa.thesisbenchmark.configuration.MssqlProperties;
 import at.sessa.thesisbenchmark.configuration.PostgresProperties;
 import org.flywaydb.core.Flyway;
+import org.postgresql.Driver;
 import org.postgresql.jdbc.PgConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.SimpleDriverDataSource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ResourceUtils;
 
 import javax.sql.DataSource;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.sql.SQLException;
 
 @Service
@@ -123,11 +128,12 @@ public class BenchmarkSetupService {
     }
 
     private void startPostgresRowContainer() {
-        Utility.execRuntime(String.format("docker run -d -p 5432:5432 --name %s -e POSTGRES_PASSWORD=password -v %s postgres:12.2", postgresRowContainerName, dockerTestdataMountpath));
+        Utility.execRuntime("docker volume create postgres");
+        Utility.execRuntime(String.format("docker run -d -p 5432:5432 --shm-size=1g --name %s -e POSTGRES_PASSWORD=password -e PGDATA=/var/lib/postgresql/data/pgdata -v %s --mount source=postgres,target=/var/lib/postgresql/data postgres:12.2", postgresRowContainerName, dockerTestdataMountpath));
     }
 
     private void startPostgresColumnContainer() {
-        Utility.execRuntime(String.format("docker run -d -p 5432:5432 --name %s -e POSTGRES_PASSWORD=password -v %s postgres_12_cstore", postgresColumnContainerName, dockerTestdataMountpath));
+        Utility.execRuntime(String.format("docker run -d -p 5432:5432 --name %s -e POSTGRES_PASSWORD=password -e PGDATA=/var/lib/postgresql/data/pgdata -v %s --mount source=pgcdata,target=/var/lib/postgresql/data postgres_12_cstore", postgresColumnContainerName, dockerTestdataMountpath));
     }
 
     private void startMssqlContainer() {
@@ -143,11 +149,12 @@ public class BenchmarkSetupService {
     }
 
     private DataSource createPostgresRowDataSource() {
-        return DataSourceBuilder.create()
-                .username(postgresProperties.getUsername())
-                .password(postgresProperties.getPassword())
-                .url(postgresProperties.getJdbcUrl())
-                .build();
+        SimpleDriverDataSource simpleDriverDataSource = new SimpleDriverDataSource();
+        simpleDriverDataSource.setDriverClass(Driver.class);
+        simpleDriverDataSource.setUrl(postgresProperties.getJdbcUrl());
+        simpleDriverDataSource.setUsername(postgresProperties.getUsername());
+        simpleDriverDataSource.setPassword(postgresProperties.getPassword());
+        return simpleDriverDataSource;
     }
 
     private DataSource createPostgresColumnDataSource() {
@@ -256,6 +263,28 @@ public class BenchmarkSetupService {
         );
 
         logger.info("Finished loading lineitems at: {}", System.currentTimeMillis());
+
+        String classPathLocation = "classpath:db/migration/postgres/keys.sql";
+        try {
+            File sqlFile = ResourceUtils.getFile(classPathLocation);
+            String query = new String(Files.readAllBytes(sqlFile.toPath()));
+            jdbcTemplate.execute(query);
+        } catch (Exception e) {
+            logger.error("Error adding keys", e);
+        }
+
+        logger.info("Finished adding keys and constraints at: {}", System.currentTimeMillis());
+
+        jdbcTemplate.execute("VACUUM(ANALYZE) REGION");
+        jdbcTemplate.execute("VACUUM(ANALYZE) NATION");
+        jdbcTemplate.execute("VACUUM(ANALYZE) SUPPLIER");
+        jdbcTemplate.execute("VACUUM(ANALYZE) PART");
+        jdbcTemplate.execute("VACUUM(ANALYZE) CUSTOMER");
+        jdbcTemplate.execute("VACUUM(ANALYZE) PARTSUPP");
+        jdbcTemplate.execute("VACUUM(ANALYZE) ORDERS");
+        jdbcTemplate.execute("VACUUM(ANALYZE) LINEITEM");
+
+        logger.info("Finished vacuum analyze at: {}", System.currentTimeMillis());
 
         long endTime = System.currentTimeMillis();
 

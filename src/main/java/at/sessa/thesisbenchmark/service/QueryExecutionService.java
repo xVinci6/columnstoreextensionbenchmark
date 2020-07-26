@@ -30,7 +30,7 @@ public class QueryExecutionService {
         long startTime = System.currentTimeMillis();
         logger.info("Starting benchmark for {} on {}", databaseVendor, startTime);
 
-        for(int i = 1; i <= 22; i++) {
+        for(int i = 17; i <= 22; i++) {
             String query = "";
             String classPathLocation = "classpath:db/queries/"+databaseVendor+"/"+i+".sql";
             try {
