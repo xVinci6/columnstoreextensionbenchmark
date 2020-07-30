@@ -1,35 +1,3 @@
-ALTER TABLE PART
-  ADD CONSTRAINT part_kpey
-     PRIMARY KEY (P_PARTKEY);
-
-ALTER TABLE SUPPLIER
-  ADD CONSTRAINT supplier_pkey
-     PRIMARY KEY (S_SUPPKEY);
-
-ALTER TABLE PARTSUPP
-  ADD CONSTRAINT partsupp_pkey
-     PRIMARY KEY (PS_PARTKEY, PS_SUPPKEY);
-
-ALTER TABLE CUSTOMER
-  ADD CONSTRAINT customer_pkey
-     PRIMARY KEY (C_CUSTKEY);
-
-ALTER TABLE ORDERS
-  ADD CONSTRAINT orders_pkey
-     PRIMARY KEY (O_ORDERKEY);
-
-ALTER TABLE LINEITEM
-  ADD CONSTRAINT lineitem_pkey
-     PRIMARY KEY (L_ORDERKEY, L_LINENUMBER);
-
-ALTER TABLE NATION
-  ADD CONSTRAINT nation_pkey
-     PRIMARY KEY (N_NATIONKEY);
-
-ALTER TABLE REGION
-  ADD CONSTRAINT region_pkey
-     PRIMARY KEY (R_REGIONKEY);
-
 ALTER TABLE PARTSUPP
 ADD CONSTRAINT partsupp_part_fkey
    FOREIGN KEY (PS_PARTKEY) REFERENCES PART(P_PARTKEY);
@@ -67,14 +35,12 @@ ALTER TABLE NATION
 ADD CONSTRAINT nation_region_fkey
    FOREIGN KEY (N_REGIONKEY) REFERENCES REGION(R_REGIONKEY);
 
-CREATE INDEX on partsupp (ps_partkey);
-CREATE INDEX on partsupp (ps_suppkey);
-CREATE INDEX on customer (c_nationkey);
-CREATE INDEX on orders (o_custkey);
-CREATE INDEX on lineitem (l_orderkey);
-CREATE INDEX on lineitem (l_partkey);
-CREATE INDEX on lineitem (l_suppkey);
-CREATE INDEX on lineitem (l_partkey, l_suppkey);
-CREATE INDEX on nation (n_regionkey);
-
-
+CREATE INDEX psidxp on partsupp (ps_partkey);
+CREATE INDEX psidxs on partsupp (ps_suppkey);
+CREATE INDEX cidxn on customer (c_nationkey);
+CREATE INDEX oidxc on orders (o_custkey);
+CREATE INDEX lidxo on lineitem (l_orderkey);
+CREATE INDEX lidxp on lineitem (l_partkey);
+CREATE INDEX lidxs on lineitem (l_suppkey);
+CREATE INDEX lidxps on lineitem (l_partkey, l_suppkey);
+CREATE INDEX lidxn on nation (n_regionkey);

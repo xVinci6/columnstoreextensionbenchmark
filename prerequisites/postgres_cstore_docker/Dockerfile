@@ -1,4 +1,4 @@
-FROM postgres:12.2
+FROM postgres:12.3
 
 MAINTAINER Sylvain Caillet (s.caillet@free.fr)
 

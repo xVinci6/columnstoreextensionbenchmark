@@ -1,3 +1,4 @@
+
 ALTER TABLE PART
   ADD CONSTRAINT part_kpey
      PRIMARY KEY (P_PARTKEY);
@@ -67,14 +68,12 @@ ALTER TABLE NATION
 ADD CONSTRAINT nation_region_fkey
    FOREIGN KEY (N_REGIONKEY) REFERENCES REGION(R_REGIONKEY);
 
-CREATE INDEX on partsupp (ps_partkey);
-CREATE INDEX on partsupp (ps_suppkey);
-CREATE INDEX on customer (c_nationkey);
-CREATE INDEX on orders (o_custkey);
-CREATE INDEX on lineitem (l_orderkey);
-CREATE INDEX on lineitem (l_partkey);
-CREATE INDEX on lineitem (l_suppkey);
-CREATE INDEX on lineitem (l_partkey, l_suppkey);
-CREATE INDEX on nation (n_regionkey);
-
-
+CREATE INDEX psidxp on partsupp (ps_partkey);
+CREATE INDEX psidxs on partsupp (ps_suppkey);
+CREATE INDEX cidxn on customer (c_nationkey);
+CREATE INDEX oidxc on orders (o_custkey);
+CREATE INDEX lidxo on lineitem (l_orderkey);
+CREATE INDEX lidxp on lineitem (l_partkey);
+CREATE INDEX lidxs on lineitem (l_suppkey);
+CREATE INDEX lidxps on lineitem (l_partkey, l_suppkey);
+CREATE INDEX lidxn on nation (n_regionkey);

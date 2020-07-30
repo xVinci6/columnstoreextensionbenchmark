@@ -29,35 +29,36 @@ public class ThesisbenchmarkApplication implements CommandLineRunner {
 	public void run(String... args) throws Exception {
 		try {
 			executeBenchmark();
+		} catch (Exception e) {
+			logger.error("Exception while benchmarking", e);
 		} finally {
-			//benchmarkSetupService.cleanUpContainers();
+			benchmarkSetupService.cleanUpContainers();
 		}
 	}
 
 	private void executeBenchmark() {
 		QueryExecutionService queryExecutionService;
-
 		logger.info("Starting postgres row datasource benchmark");
 		DataSource postgresRowDatasource = benchmarkSetupService.setupPostgresRowDatasource();
 		queryExecutionService = new QueryExecutionService(postgresRowDatasource);
 		queryExecutionService.benchmark("postgres", "row");
-		// benchmarkSetupService.cleanUpPostgresRowContainer();
+		benchmarkSetupService.cleanUpPostgresRowContainer();
+
 		logger.info("Starting postgres column datasource benchmark");
 		DataSource postgresColumnDataSource = benchmarkSetupService.setupPostgresColumnDatasource();
 		queryExecutionService = new QueryExecutionService(postgresColumnDataSource);
 		queryExecutionService.benchmark("postgres", "column");
-		/*
 		benchmarkSetupService.cleanUpPostgresColumnContainer();
+
 		logger.info("Starting mssql row datasource benchmark");
 		DataSource mssqlRowDataSource = benchmarkSetupService.setupMssqlRowDataSource();
-		// TODO: Execute queries and measure time
-		//benchmarkSetupService.cleanUpMssqlContainer();
+		queryExecutionService = new QueryExecutionService(mssqlRowDataSource);
+		queryExecutionService.benchmark("mssql", "row");
+		benchmarkSetupService.cleanUpMssqlContainer("mssqlrow");
 
 		logger.info("Starting mssql column datasource benchmark");
 		DataSource mssqlColumnDataSource = benchmarkSetupService.setupMssqlColumnDataSource();
-
-		// TODO: Execute queries and measure time
-		//benchmarkSetupService.cleanUpMssqlContainer();
-		*/
+		queryExecutionService.benchmark("mssql", "column");
+		benchmarkSetupService.cleanUpMssqlContainer("mssqlcolumn");
 	}
 }
