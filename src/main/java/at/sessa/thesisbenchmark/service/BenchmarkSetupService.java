@@ -4,23 +4,25 @@ import at.sessa.thesisbenchmark.Utility;
 import at.sessa.thesisbenchmark.configuration.GenericProperties;
 import at.sessa.thesisbenchmark.configuration.MssqlProperties;
 import at.sessa.thesisbenchmark.configuration.PostgresProperties;
-import com.microsoft.sqlserver.jdbc.SQLServerConnection;
 import com.microsoft.sqlserver.jdbc.SQLServerDriver;
-import jdk.jshell.execution.Util;
 import org.flywaydb.core.Flyway;
 import org.postgresql.Driver;
 import org.postgresql.jdbc.PgConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SimpleDriverDataSource;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ResourceUtils;
+import org.springframework.util.StreamUtils;
 
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.sql.SQLException;
 
@@ -34,7 +36,7 @@ public class BenchmarkSetupService {
     private final String postgresRowContainerName = "postgres12";
     private final String postgresColumnContainerName = "postgres12cstore";
     private final String mssqlContainerName = "mssql";
-    private final String dockerTestdataMountpath = "\"C:\\Users\\capta\\Desktop\\Thesis Rowstore\\Project\\columnstoreextensionbenchmark\\prerequisites\\testdata:/testdata\"";
+    private final String dockerTestdataMountpath;
     private final String testDataLocationInContainer;
 
     public BenchmarkSetupService(PostgresProperties postgresProperties, MssqlProperties mssqlProperties, GenericProperties genericProperties) {
@@ -42,6 +44,7 @@ public class BenchmarkSetupService {
         this.mssqlProperties = mssqlProperties;
         this.genericProperties = genericProperties;
         testDataLocationInContainer = "/testdata/"+genericProperties.getScaleFactor()+"/";
+        dockerTestdataMountpath = genericProperties.getDockerTestdataMountPath() + ":/testdata";
     }
 
     public DataSource setupPostgresRowDatasource() {
@@ -53,12 +56,7 @@ public class BenchmarkSetupService {
         restartPostgresRowContainer();
         postgresRowDataSource = createPostgresDataSource();
         waitUntilDatasourceReady(postgresRowDataSource, null);
-        try {
-            PgConnection pgConnection = (PgConnection) postgresRowDataSource.getConnection();
-            pgConnection.setDefaultFetchSize(1);
-        } catch (SQLException exception) {
-            logger.error("Error while setting fetch size", exception);
-        }
+        printVolumeSizes();
         return postgresRowDataSource;
     }
 
@@ -71,12 +69,7 @@ public class BenchmarkSetupService {
         restartPostgresColContainer();
         postgresColumnDataSource = createPostgresDataSource();
         waitUntilDatasourceReady(postgresColumnDataSource, null);
-        try {
-            PgConnection pgConnection = (PgConnection) postgresColumnDataSource.getConnection();
-            pgConnection.setDefaultFetchSize(1);
-        } catch (SQLException exception) {
-            logger.error("Error while setting fetch size", exception);
-        }
+        printVolumeSizes();
         return postgresColumnDataSource;
     }
 
@@ -89,6 +82,7 @@ public class BenchmarkSetupService {
         restartMssqlRowContainer();
         mssqlDataSource = createMssqlDataSource();
         waitUntilDatasourceReady(mssqlDataSource, null);
+        printVolumeSizes();
         return mssqlDataSource;
     }
 
@@ -101,6 +95,7 @@ public class BenchmarkSetupService {
         restartMssqlColumnContainer();
         mssqlDataSource = createMssqlDataSource();
         waitUntilDatasourceReady(mssqlDataSource, null);
+        printVolumeSizes();
         return mssqlDataSource;
     }
 
@@ -142,6 +137,7 @@ public class BenchmarkSetupService {
             Runtime.getRuntime().exec(String.format("docker stop %s", mssqlContainerName));
             Thread.sleep(20000);
             Runtime.getRuntime().exec(String.format("docker rm %s", mssqlContainerName));
+            Runtime.getRuntime().exec(String.format("docker volume rm %s", volumeName));
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -149,7 +145,7 @@ public class BenchmarkSetupService {
 
     private void startPostgresRowContainer() {
         Utility.execRuntime("docker volume create postgres");
-        Utility.execRuntime(String.format("docker run -d -p 5432:5432 --shm-size=2g --cpus=8 -m=16g --name %s -e POSTGRES_PASSWORD=password -e PGDATA=/var/lib/postgresql/data/pgdata -v %s --mount source=postgres,target=/var/lib/postgresql/data postgres:12.3 -c shared_buffers=2048MB -c effective_cache_size=12288MB -c work_mem=512MB -c shared_preload_libraries=pg_stat_statements", postgresRowContainerName, dockerTestdataMountpath));
+        Utility.execRuntime(String.format("docker run -d -p 5432:5432 --shm-size=4g --cpus=8 -m=32g --name %s -e POSTGRES_PASSWORD=password -e PGDATA=/var/lib/postgresql/data/pgdata -v %s --mount source=postgres,target=/var/lib/postgresql/data postgres:12.3 -c shared_buffers=8192MB -c effective_cache_size=163848MB -c work_mem=512MB -c shared_preload_libraries=pg_stat_statements", postgresRowContainerName, dockerTestdataMountpath));
     }
 
     private void restartPostgresRowContainer() {
@@ -158,7 +154,7 @@ public class BenchmarkSetupService {
 
     private void startPostgresColumnContainer() {
         Utility.execRuntime("docker volume create postgrescolumn");
-        Utility.execRuntime(String.format("docker run -d -p 5432:5432 --shm-size=2g --cpus=8 -m=16g --name %s -e POSTGRES_PASSWORD=password -e PGDATA=/var/lib/postgresql/data/pgdata -v %s --mount source=postgrescolumn,target=/var/lib/postgresql/data postgres_12_cstore -c shared_buffers=2048MB -c effective_cache_size=12288MB -c work_mem=512MB -c shared_preload_libraries=pg_stat_statements", postgresColumnContainerName, dockerTestdataMountpath));
+        Utility.execRuntime(String.format("docker run -d -p 5432:5432 --shm-size=4g --cpus=8 -m=32g --name %s -e POSTGRES_PASSWORD=password -e PGDATA=/var/lib/postgresql/data/pgdata -v %s --mount source=postgrescolumn,target=/var/lib/postgresql/data postgres_12_cstore -c shared_buffers=8192MB -c effective_cache_size=163848MB -c work_mem=512MB -c shared_preload_libraries=pg_stat_statements", postgresColumnContainerName, dockerTestdataMountpath));
     }
 
     private void restartPostgresColContainer() {
@@ -167,7 +163,7 @@ public class BenchmarkSetupService {
 
     private void startMssqlContainer(String volumeName) {
         Utility.execRuntime("docker volume create "+volumeName);
-        Utility.execRuntime(String.format("docker run --name %s -e \"ACCEPT_EULA=Y\" -e \"SA_PASSWORD=Password1\" -p 1433:1433 -v %s --mount source="+volumeName+",target=/var/opt/mssql -d mcr.microsoft.com/mssql/server:2019-CU5-ubuntu-16.04", mssqlContainerName, dockerTestdataMountpath));
+        Utility.execRuntime(String.format("docker run --name %s -e ACCEPT_EULA=Y -e SA_PASSWORD=Password1 -e MSSQL_MEMORY_LIMIT_MB=32768 -p 1433:1433 --shm-size=4g --cpus=8 -m=32g -v %s --mount source="+volumeName+",target=/var/opt/mssql -d mcr.microsoft.com/mssql/server:2019-CU5-ubuntu-16.04", mssqlContainerName, dockerTestdataMountpath));
     }
 
     private void restartMssqlRowContainer() {
@@ -179,11 +175,7 @@ public class BenchmarkSetupService {
     }
 
     private void createMssqlDatabase() {
-        try {
-            Runtime.getRuntime().exec("sqlcmd -U sa -P Password1 -Q \"CREATE DATABASE springbootdb;\"");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        Utility.execRuntime(String.format("docker exec "+mssqlContainerName+" /opt/mssql-tools/bin/sqlcmd -U sa -P Password1 -Q %s","\\\"CREATE DATABASE springbootdb;\\\""));
     }
 
     private DataSource createPostgresDataSource() {
@@ -297,8 +289,9 @@ public class BenchmarkSetupService {
 
         String classPathLocation = "classpath:db/migration/postgres/keys.sql";
         try {
-            File sqlFile = ResourceUtils.getFile(classPathLocation);
-            String query = new String(Files.readAllBytes(sqlFile.toPath()));
+            ResourceLoader resourceLoader = new DefaultResourceLoader();
+            Resource resource = resourceLoader.getResource(classPathLocation);
+            String query= StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
             jdbcTemplate.execute(query);
         } catch (Exception e) {
             logger.error("Error adding keys", e);
@@ -396,8 +389,9 @@ public class BenchmarkSetupService {
 
         String classPathLocation = "classpath:db/migration/mssql/"+databaseType+"/keys.sql";
         try {
-            File sqlFile = ResourceUtils.getFile(classPathLocation);
-            String query = new String(Files.readAllBytes(sqlFile.toPath()));
+            ResourceLoader resourceLoader = new DefaultResourceLoader();
+            Resource resource = resourceLoader.getResource(classPathLocation);
+            String query = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
             jdbcTemplate.execute(query);
         } catch (Exception e) {
             logger.error("Error adding keys", e);
@@ -426,5 +420,9 @@ public class BenchmarkSetupService {
                 throw new RuntimeException(interruptedException);
             }
         }
+    }
+
+    private void printVolumeSizes() {
+        Utility.execRuntime("docker system df -v");
     }
 }

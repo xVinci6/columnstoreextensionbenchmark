@@ -3,14 +3,19 @@ package at.sessa.thesisbenchmark.service;
 import at.sessa.thesisbenchmark.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.SqlProvider;
 import org.springframework.jdbc.core.StatementCallback;
 import org.springframework.lang.Nullable;
-import org.springframework.util.ResourceUtils;
+import org.springframework.util.StreamUtils;
 
 import javax.sql.DataSource;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -22,6 +27,8 @@ public class QueryExecutionService {
 
     public QueryExecutionService(DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.jdbcTemplate.setFetchSize(1);
+        this.jdbcTemplate.setQueryTimeout(1200);
     }
 
     public void benchmark(String databaseVendor, String databaseType) {
@@ -44,8 +51,9 @@ public class QueryExecutionService {
         String query = "";
         String classPathLocation = "classpath:db/queries/"+databaseVendor+"/"+i+".sql";
         try {
-            File sqlFile = ResourceUtils.getFile(classPathLocation);
-            query = new String(Files.readAllBytes(sqlFile.toPath()));
+            ResourceLoader resourceLoader = new DefaultResourceLoader();
+            Resource resource = resourceLoader.getResource(classPathLocation);
+            query = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
         } catch (Exception e) {
             logger.error("Error executing query {}", i, e);
         }
@@ -53,8 +61,11 @@ public class QueryExecutionService {
         logger.info("Starting query {} on {}", i, queryStartTime);
         if(databaseVendor.equals("mssql") && i == 15) {
             createViewForMssqlQuery15();
+        } try {
+            jdbcTemplate.execute(query);
+        } catch (DataAccessException e) {
+            logger.error("Exception occurred during query execution, probably timed out", e);
         }
-        jdbcTemplate.execute(new ExecuteStatementCallback(query));
         if(databaseVendor.equals("mssql") && i == 15) {
             dropViewForMssqlQuery15();
         }
@@ -78,32 +89,12 @@ public class QueryExecutionService {
                 "\tgroup by\n" +
                 "\t\tl_suppkey;";
 
-        jdbcTemplate.execute(new ExecuteStatementCallback(query));
+        jdbcTemplate.execute(query);
     }
 
     private void dropViewForMssqlQuery15() {
         String query = "drop view revenue0;";
 
-        jdbcTemplate.execute(new ExecuteStatementCallback(query));
-    }
-
-    static class ExecuteStatementCallback implements StatementCallback<Object>, SqlProvider {
-        private final String sql;
-
-        public ExecuteStatementCallback(String sql) {
-            this.sql = sql;
-        }
-
-        @Override
-        @Nullable
-        public Object doInStatement(Statement stmt) throws SQLException {
-            stmt.setFetchSize(1);
-            stmt.execute(sql);
-            return null;
-        }
-        @Override
-        public String getSql() {
-            return sql;
-        }
+        jdbcTemplate.execute(query);
     }
 }

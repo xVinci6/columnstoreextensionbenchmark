@@ -58,6 +58,7 @@ public class ThesisbenchmarkApplication implements CommandLineRunner {
 
 		logger.info("Starting mssql column datasource benchmark");
 		DataSource mssqlColumnDataSource = benchmarkSetupService.setupMssqlColumnDataSource();
+		queryExecutionService = new QueryExecutionService(mssqlColumnDataSource);
 		queryExecutionService.benchmark("mssql", "column");
 		benchmarkSetupService.cleanUpMssqlContainer("mssqlcolumn");
 	}

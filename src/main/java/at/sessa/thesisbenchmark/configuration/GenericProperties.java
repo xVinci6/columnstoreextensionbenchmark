@@ -7,6 +7,15 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "at.sessa.thesisbenchmark")
 public class GenericProperties {
     private String scaleFactor;
+    private String dockerTestdataMountPath;
+
+    public String getDockerTestdataMountPath() {
+        return dockerTestdataMountPath;
+    }
+
+    public void setDockerTestdataMountPath(String dockerTestdataMountPath) {
+        this.dockerTestdataMountPath = dockerTestdataMountPath;
+    }
 
     public String getScaleFactor() {
         return scaleFactor;
