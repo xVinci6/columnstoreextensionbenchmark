@@ -38,6 +38,7 @@ public class ThesisbenchmarkApplication implements CommandLineRunner {
 
 	private void executeBenchmark() {
 		QueryExecutionService queryExecutionService;
+
 		logger.info("Starting postgres row datasource benchmark");
 		DataSource postgresRowDatasource = benchmarkSetupService.setupPostgresRowDatasource();
 		queryExecutionService = new QueryExecutionService(postgresRowDatasource);
@@ -55,6 +56,7 @@ public class ThesisbenchmarkApplication implements CommandLineRunner {
 		queryExecutionService = new QueryExecutionService(mssqlRowDataSource);
 		queryExecutionService.benchmark("mssql", "row");
 		benchmarkSetupService.cleanUpMssqlContainer("mssqlrow");
+
 
 		logger.info("Starting mssql column datasource benchmark");
 		DataSource mssqlColumnDataSource = benchmarkSetupService.setupMssqlColumnDataSource();

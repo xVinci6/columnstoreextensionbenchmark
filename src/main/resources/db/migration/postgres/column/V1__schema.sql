@@ -8,8 +8,7 @@ CREATE FOREIGN TABLE nation
     n_regionkey  INTEGER not null,
     n_comment    VARCHAR(152)
 )
-SERVER cstore_server
-OPTIONS(compression 'pglz');
+SERVER cstore_server;
 
 CREATE FOREIGN TABLE region
 (
@@ -17,8 +16,7 @@ CREATE FOREIGN TABLE region
     r_name       CHAR(25) not null,
     r_comment    VARCHAR(152)
 )
-SERVER cstore_server
-OPTIONS(compression 'pglz');
+SERVER cstore_server;
 
 CREATE FOREIGN TABLE part
 (
@@ -32,8 +30,7 @@ CREATE FOREIGN TABLE part
     p_retailprice DOUBLE PRECISION not null,
     p_comment     VARCHAR(23) not null
 )
-SERVER cstore_server
-OPTIONS(compression 'pglz');
+SERVER cstore_server;
 
 CREATE FOREIGN TABLE supplier
 (
@@ -45,8 +42,7 @@ CREATE FOREIGN TABLE supplier
     s_acctbal     DOUBLE PRECISION not null,
     s_comment     VARCHAR(101) not null
 )
-SERVER cstore_server
-OPTIONS(compression 'pglz');
+SERVER cstore_server;
 
 CREATE FOREIGN TABLE partsupp
 (
@@ -56,8 +52,7 @@ CREATE FOREIGN TABLE partsupp
     ps_supplycost  DOUBLE PRECISION  not null,
     ps_comment     VARCHAR(199) not null
 )
-SERVER cstore_server
-OPTIONS(compression 'pglz');
+SERVER cstore_server;
 
 CREATE FOREIGN TABLE customer
 (
@@ -70,8 +65,7 @@ CREATE FOREIGN TABLE customer
     c_mktsegment  CHAR(10) not null,
     c_comment     VARCHAR(117) not null
 )
-SERVER cstore_server
-OPTIONS(compression 'pglz');
+SERVER cstore_server;
 
 CREATE FOREIGN TABLE orders
 (
@@ -85,8 +79,7 @@ CREATE FOREIGN TABLE orders
     o_shippriority   INTEGER not null,
     o_comment        VARCHAR(79) not null
 )
-SERVER cstore_server
-OPTIONS(compression 'pglz');
+SERVER cstore_server;
 
 CREATE FOREIGN TABLE lineitem
 (
@@ -107,5 +100,4 @@ CREATE FOREIGN TABLE lineitem
     l_shipmode     CHAR(10) not null,
     l_comment      VARCHAR(44) not null
 )
-SERVER cstore_server
-OPTIONS(compression 'pglz');
+SERVER cstore_server;

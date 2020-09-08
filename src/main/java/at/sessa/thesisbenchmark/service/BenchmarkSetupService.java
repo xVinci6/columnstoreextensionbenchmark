@@ -19,12 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 
 import javax.sql.DataSource;
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.sql.SQLException;
 
 @Service
 public class BenchmarkSetupService {
@@ -145,7 +141,7 @@ public class BenchmarkSetupService {
 
     private void startPostgresRowContainer() {
         Utility.execRuntime("docker volume create postgres");
-        Utility.execRuntime(String.format("docker run -d -p 5432:5432 --shm-size=4g --cpus=8 -m=32g --name %s -e POSTGRES_PASSWORD=password -e PGDATA=/var/lib/postgresql/data/pgdata -v %s --mount source=postgres,target=/var/lib/postgresql/data postgres:12.3 -c shared_buffers=8192MB -c effective_cache_size=163848MB -c work_mem=512MB -c shared_preload_libraries=pg_stat_statements", postgresRowContainerName, dockerTestdataMountpath));
+        Utility.execRuntime(String.format("docker run -d -p 5432:5432 --shm-size=4g --cpus=8 -m=32G --name %s -e POSTGRES_PASSWORD=password -e PGDATA=/var/lib/postgresql/data/pgdata -v %s --mount source=postgres,target=/var/lib/postgresql/data postgres:12.3 -c shared_buffers=8192MB -c effective_cache_size=163848MB -c work_mem=512MB", postgresRowContainerName, dockerTestdataMountpath));
     }
 
     private void restartPostgresRowContainer() {
@@ -154,7 +150,7 @@ public class BenchmarkSetupService {
 
     private void startPostgresColumnContainer() {
         Utility.execRuntime("docker volume create postgrescolumn");
-        Utility.execRuntime(String.format("docker run -d -p 5432:5432 --shm-size=4g --cpus=8 -m=32g --name %s -e POSTGRES_PASSWORD=password -e PGDATA=/var/lib/postgresql/data/pgdata -v %s --mount source=postgrescolumn,target=/var/lib/postgresql/data postgres_12_cstore -c shared_buffers=8192MB -c effective_cache_size=163848MB -c work_mem=512MB -c shared_preload_libraries=pg_stat_statements", postgresColumnContainerName, dockerTestdataMountpath));
+        Utility.execRuntime(String.format("docker run -d -p 5432:5432 --shm-size=16g --cpus=8 -m=32g --name %s -e POSTGRES_PASSWORD=password -e PGDATA=/var/lib/postgresql/data/pgdata -v %s --mount source=postgrescolumn,target=/var/lib/postgresql/data postgres_12_cstore -c shared_buffers=8192MB -c effective_cache_size=163848MB -c work_mem=512MB", postgresColumnContainerName, dockerTestdataMountpath));
     }
 
     private void restartPostgresColContainer() {

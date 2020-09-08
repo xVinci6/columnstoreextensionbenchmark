@@ -8,17 +8,10 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.SqlProvider;
-import org.springframework.jdbc.core.StatementCallback;
-import org.springframework.lang.Nullable;
 import org.springframework.util.StreamUtils;
 
 import javax.sql.DataSource;
-import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.sql.SQLException;
-import java.sql.Statement;
 
 public class QueryExecutionService {
     Logger logger = LoggerFactory.getLogger(QueryExecutionService.class);
@@ -28,7 +21,8 @@ public class QueryExecutionService {
     public QueryExecutionService(DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.jdbcTemplate.setFetchSize(1);
-        this.jdbcTemplate.setQueryTimeout(1200);
+        // Will not be respected by SQL Server driver
+        this.jdbcTemplate.setQueryTimeout(180000);
     }
 
     public void benchmark(String databaseVendor, String databaseType) {
